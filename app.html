@@ -14,12 +14,6 @@
 <body>
 
   <script>
-    function decodeHtml(html) {
-      var txt = document.createElement("textarea");
-      txt.innerHTML = html;
-      return txt.value;
-    }
-
     async function getSelectedImage() {
       const selection = await miro.board.getSelection();
       let images = selection.filter((item) => item.type === 'image');
@@ -30,7 +24,7 @@
     }
 
     var selectedImage = null;
-    miro.board.ui.on("selection:update", async (event) => {
+    async function updateSelectedImage() {
       selectedImage = await getSelectedImage();
       document.getElementById("addbutton").innerHTML = "Add";
 
@@ -41,6 +35,11 @@
           document.getElementById("addbutton").innerHTML = "Update";
         }
       }
+    }
+    updateSelectedImage();
+
+    miro.board.ui.on("selection:update", async (event) => {
+      updateSelectedImage();
     })
 
     var isUpdating = false;
