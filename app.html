@@ -7,7 +7,7 @@
   <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <title>Miromath</title>
-  
+
   <link rel="stylesheet" href="/assets/style.f9186f78.css">
 </head>
 
@@ -60,11 +60,15 @@
         let y = viewport.y + 0.5 * viewport.height;
 
         // Query the selection again (old position might be outdated)
+        let parentId = undefined;
+        let relativeTo = undefined;
         if (selectedImage !== null) {
           let s = await getSelectedImage();
           if (s !== null) {
             x = s.x;
             y = s.y;
+            parentId = s.parentId;
+            relativeTo = s.relativeTo;
             await miro.board.remove(selectedImage);
           }
         }
@@ -74,6 +78,8 @@
           alt: txt,
           x: x,
           y: y,
+          parentId: parentId,
+          relativeTo: relativeTo,
         });
 
         await miro.board.select({ id: image.id });
