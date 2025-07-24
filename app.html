@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-  <title>Miromath</title>
+  <title>Equation Editor</title>
 
   <link rel="stylesheet" href="/assets/style.f9186f78.css">
 </head>
@@ -32,11 +32,14 @@
     var selectedImage = null;
     miro.board.ui.on("selection:update", async (event) => {
       selectedImage = await getSelectedImage();
-      if (selectedImage !== null) {
-        document.getElementById("mathinput").value = decodeHtml(selectedImage.alt);
-        document.getElementById("addbutton").innerHTML = "Update";
-      } else {
-        document.getElementById("addbutton").innerHTML = "Add";
+      document.getElementById("addbutton").innerHTML = "Add";
+
+      if (selectedImage != null) {
+        let input = await selectedImage.getMetadata("TeXInput");
+        if (input != null) {
+          document.getElementById("mathinput").value = input;
+          document.getElementById("addbutton").innerHTML = "Update";
+        }
       }
     })
 
@@ -67,7 +70,7 @@
             // If the selection is attached to a parent frame, detach first
             // to get the global position
             if (s.parentId != null) {
-              let a = await miro.board.get({ id: s.parentId });
+              let a = await miro.board.get({id: s.parentId});
               frame = a[0];
               await frame.remove(s);
               s = await getSelectedImage();
@@ -82,7 +85,7 @@
 
         let image = await miro.board.createImage({
           url: dataUrl,
-          alt: txt,
+          title: "MathJax equation",
           x: x,
           y: y,
         });
@@ -92,12 +95,14 @@
           frame.add(image);
         }
 
-        await miro.board.select({ id: image.id });
+        await image.setMetadata('TeXInput', txt)
+
+        await miro.board.select({id: image.id});
 
         document.getElementById("erroroutput").innerHTML = "";
       }).catch(function (err) {
         document.getElementById("erroroutput").innerHTML = err.message;
-      }).then(function() {
+      }).then(function () {
         isUpdating = false;
       });
     }
@@ -126,10 +131,6 @@
       </div>
     </div>
   </div>
-
-  <script>
-
-  </script>
 </body>
 
 </html>
