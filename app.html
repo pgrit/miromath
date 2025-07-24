@@ -67,8 +67,9 @@
             // If the selection is attached to a parent frame, detach first
             // to get the global position
             if (s.parentId !== undefined) {
-              frame = miro.board.get({ id: s.parentId })
-              frame.remove(s);
+              let a = await miro.board.get({ id: s.parentId });
+              frame = a[0];
+              await frame.remove(s);
               s = await getSelectedImage();
             }
 
