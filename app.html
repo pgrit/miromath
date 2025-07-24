@@ -60,15 +60,21 @@
         let y = viewport.y + 0.5 * viewport.height;
 
         // Query the selection again (old position might be outdated)
-        let parentId = undefined;
-        let relativeTo = undefined;
+        let frame = null;
         if (selectedImage !== null) {
           let s = await getSelectedImage();
           if (s !== null) {
+            // If the selection is attached to a parent frame, detach first
+            // to get the global position
+            if (s.parentId !== undefined) {
+              frame = miro.board.get({ id: s.parentId })
+              frame.remove(s);
+              s = await getSelectedImage();
+            }
+
             x = s.x;
             y = s.y;
-            parentId = s.parentId;
-            relativeTo = s.relativeTo;
+
             await miro.board.remove(selectedImage);
           }
         }
@@ -78,9 +84,12 @@
           alt: txt,
           x: x,
           y: y,
-          parentId: parentId,
-          relativeTo: relativeTo,
         });
+
+        // If the replaced image was parented to a frame, also apply that parent
+        if (frame !== null) {
+          frame.add(image);
+        }
 
         await miro.board.select({ id: image.id });
 
