@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <title>Miromath</title>
+  
+  <link rel="stylesheet" href="/assets/style.f9186f78.css">
+</head>
+
+<body>
+
+  <script>
+    function decodeHtml(html) {
+      var txt = document.createElement("textarea");
+      txt.innerHTML = html;
+      return txt.value;
+    }
+
+    async function getSelectedImage() {
+      const selection = await miro.board.getSelection();
+      let images = selection.filter((item) => item.type === 'image');
+      if (images.length === 1) {
+        return images[0];
+      }
+      return null;
+    }
+
+    var selectedImage = null;
+    miro.board.ui.on("selection:update", async (event) => {
+      selectedImage = await getSelectedImage();
+      if (selectedImage !== null) {
+        document.getElementById("mathinput").value = decodeHtml(selectedImage.alt);
+        document.getElementById("addbutton").innerHTML = "Update";
+      } else {
+        document.getElementById("addbutton").innerHTML = "Add";
+      }
+    })
+
+    var isUpdating = false;
+
+    function addEquation() {
+      if (isUpdating)
+        return;
+
+      isUpdating = true;
+
+      const txt = document.getElementById("mathinput").value.trim();
+      MathJax.texReset();
+      MathJax.tex2svgPromise(txt).then(async function (node) {
+        const svg = node.getElementsByTagName("svg")[0].outerHTML;
+        const b64 = btoa(svg);
+        const dataUrl = `data:image/svg+xml;base64,${b64}`
+
+        let viewport = await miro.board.viewport.get();
+        let x = viewport.x + 0.5 * viewport.width;
+        let y = viewport.y + 0.5 * viewport.height;
+
+        // Query the selection again (old position might be outdated)
+        if (selectedImage !== null) {
+          let s = await getSelectedImage();
+          if (s !== null) {
+            x = s.x;
+            y = s.y;
+            await miro.board.remove(selectedImage);
+          }
+        }
+
+        let image = await miro.board.createImage({
+          url: dataUrl,
+          alt: txt,
+          x: x,
+          y: y,
+        });
+
+        await miro.board.select({ id: image.id });
+
+        document.getElementById("erroroutput").innerHTML = "";
+      }).catch(function (err) {
+        document.getElementById("erroroutput").innerHTML = err.message;
+      }).then(function() {
+        isUpdating = false;
+      });
+    }
+
+    function onTextareaKey(evt) {
+      if (!evt.ctrlKey) return;
+      if (evt.code !== "Enter") return;
+      addEquation();
+    }
+  </script>
+
+  <div id="root">
+    <div class="grid wrapper">
+      <div class="cs1 ce12">
+        <p>
+          <textarea id="mathinput" style="width: 100%" rows="4" onkeydown="onTextareaKey(event)"></textarea>
+        </p>
+      </div>
+      <div class="cs1 ce12">
+        <a class="button button-primary" target="_blank" onclick="addEquation()" id="addbutton">
+          Add
+        </a>
+      </div>
+      <div class="cs1 ce12">
+        <p id="erroroutput"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+  </script>
+</body>
+
+</html>
